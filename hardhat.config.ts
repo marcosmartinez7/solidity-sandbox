@@ -19,6 +19,38 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("fund", "Funds the FundMe contract")
+  .addParam("pca", "The PriceConverter's address")
+  .addParam("fma", "The FundMe's address")
+  .setAction(async (taskArgs, hre) => {
+    const PriceConverter = await hre.ethers.getContractFactory(
+      "PriceConverter"
+    );
+    const priceConverter = PriceConverter.attach(taskArgs.pca);
+
+    const FundMe = await hre.ethers.getContractFactory("FundMe", {
+      libraries: {
+        PriceConverter: priceConverter.address,
+      },
+    });
+
+    const fme = FundMe.attach(taskArgs.fma);
+
+    console.log("Funding ... ");
+    const fundTx = await fme.fund({ value: "60000000000000000" });
+    await hre.ethers.provider.waitForTransaction(fundTx.hash);
+
+    let fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    console.log("Contract balance: ", fundBalance);
+
+    console.log("Withdrawing .. ");
+    const withdrawTx = await fme.withdraw();
+    await hre.ethers.provider.waitForTransaction(withdrawTx.hash);
+
+    fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    console.log("Contract balance: ", fundBalance);
+  });
+
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
