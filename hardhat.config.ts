@@ -19,6 +19,41 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
   }
 });
 
+task("withdraw", "Get funds of the FundMe contract")
+  .addParam("pca", "The PriceConverter's address")
+  .addParam("fma", "The FundMe's address")
+  .addParam("accountindex", "Index for account list")
+
+  .setAction(async (taskArgs, hre) => {
+    const PriceConverter = await hre.ethers.getContractFactory(
+      "PriceConverter"
+    );
+    const priceConverter = PriceConverter.attach(taskArgs.pca);
+
+    const FundMe = await hre.ethers.getContractFactory("FundMe", {
+      libraries: {
+        PriceConverter: priceConverter.address,
+      },
+    });
+
+    const fme = FundMe.attach(taskArgs.fma);
+
+    let fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    console.log("Contract balance: ", fundBalance);
+
+    console.log("Withdrawing .. ");
+    const withdrawAccount = (await hre.ethers.getSigners())[
+      taskArgs.accountindex
+    ];
+
+    const withdrawTx = await fme.connect(withdrawAccount).withdraw();
+
+    await hre.ethers.provider.waitForTransaction(withdrawTx.hash);
+
+    fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    console.log("Contract balance: ", fundBalance);
+  });
+
 task("fund", "Funds the FundMe contract")
   .addParam("pca", "The PriceConverter's address")
   .addParam("fma", "The FundMe's address")
@@ -43,18 +78,6 @@ task("fund", "Funds the FundMe contract")
     await hre.ethers.provider.waitForTransaction(fundTx.hash);
 
     let fundBalance = await hre.ethers.provider.getBalance(fme.address);
-    console.log("Contract balance: ", fundBalance);
-
-    console.log("Withdrawing .. ");
-    const withdrawAccount = (await hre.ethers.getSigners())[
-      taskArgs.accountindex
-    ];
-
-    const withdrawTx = await fme.connect(withdrawAccount).withdraw();
-
-    await hre.ethers.provider.waitForTransaction(withdrawTx.hash);
-
-    fundBalance = await hre.ethers.provider.getBalance(fme.address);
     console.log("Contract balance: ", fundBalance);
   });
 
