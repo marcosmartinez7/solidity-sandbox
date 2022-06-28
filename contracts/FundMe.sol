@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 import "./PriceConverter.sol";
 
-contract FundMe {
+contract FundMe is Ownable {
     using PriceConverter for uint256;
     uint256 public minimumUsd = 50 * 1e18;
 
@@ -19,7 +21,7 @@ contract FundMe {
         addressToAmountFunded[msg.sender] = msg.value;
     }
 
-    function withdraw() public {
+    function withdraw() public onlyOwner {
         for (
             uint256 funderIndex = 0;
             funderIndex < funders.length;

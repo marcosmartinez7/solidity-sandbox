@@ -22,6 +22,8 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 task("fund", "Funds the FundMe contract")
   .addParam("pca", "The PriceConverter's address")
   .addParam("fma", "The FundMe's address")
+  .addParam("accountindex", "Index for account list")
+
   .setAction(async (taskArgs, hre) => {
     const PriceConverter = await hre.ethers.getContractFactory(
       "PriceConverter"
@@ -44,7 +46,12 @@ task("fund", "Funds the FundMe contract")
     console.log("Contract balance: ", fundBalance);
 
     console.log("Withdrawing .. ");
-    const withdrawTx = await fme.withdraw();
+    const withdrawAccount = (await hre.ethers.getSigners())[
+      taskArgs.accountindex
+    ];
+
+    const withdrawTx = await fme.connect(withdrawAccount).withdraw();
+
     await hre.ethers.provider.waitForTransaction(withdrawTx.hash);
 
     fundBalance = await hre.ethers.provider.getBalance(fme.address);
@@ -59,8 +66,7 @@ const config: HardhatUserConfig = {
   networks: {
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_2!],
     },
   },
   gasReporter: {
