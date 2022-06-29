@@ -5,18 +5,20 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./PriceConverter.sol";
 
+error NotEnoughFunds();
+
 contract FundMe is Ownable {
     using PriceConverter for uint256;
-    uint256 public minimumUsd = 50 * 1e18;
+    uint256 public constant MINIMUM_USD = 50 * 1e18;
 
     address[] public funders;
     mapping(address => uint256) public addressToAmountFunded;
 
     function fund() public payable {
-        require(
-            msg.value.getConversionRate() >= minimumUsd,
-            "Didnt send enough!"
-        );
+        if (msg.value.getConversionRate() < MINIMUM_USD) {
+            revert NotEnoughFunds();
+        }
+
         funders.push(msg.sender);
         addressToAmountFunded[msg.sender] = msg.value;
     }
