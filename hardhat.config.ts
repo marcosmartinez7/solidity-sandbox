@@ -7,7 +7,6 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
-import { ethers } from "hardhat";
 import { assert } from "console";
 
 dotenv.config();
@@ -65,7 +64,6 @@ task("fund", "Funds the FundMe contract")
   .addParam("pca", "The PriceConverter's address")
   .addParam("fma", "The FundMe's address")
   .addParam("accountindex", "Index for account list")
-
   .setAction(async (taskArgs, hre) => {
     const PriceConverter = await hre.ethers.getContractFactory(
       "PriceConverter"
@@ -79,16 +77,22 @@ task("fund", "Funds the FundMe contract")
     });
 
     const fme = FundMe.attach(taskArgs.fma);
+    const funder = (await hre.ethers.getSigners())[taskArgs.accountindex];
 
     console.log("Funding ... ");
-    const fundTx = await fme.fund({ value: "60000000000000000" });
+    const fundTx = await fme
+      .connect(funder)
+      .fund({ value: "60000000000000000" });
     const fundTxReceipt = await hre.ethers.provider.waitForTransaction(
       fundTx.hash
     );
     assert(fundTxReceipt.status);
 
-    let fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    const fundBalance = await hre.ethers.provider.getBalance(fme.address);
     console.log("Contract balance: ", fundBalance);
+
+    const funderBalance = await fme.addressToAmountFunded(funder.address);
+    console.log("Funder balance: ", funderBalance);
   });
 
 task("receive", "Funds the FundMe contract by calling receive function")
@@ -99,7 +103,7 @@ task("receive", "Funds the FundMe contract by calling receive function")
     const account = (await hre.ethers.getSigners())[taskArgs.accountindex];
     const receiveTx = await account.sendTransaction({
       to: taskArgs.fma,
-      value: "60000000000000000",
+      value: "70000000000000000",
     });
     const receiveTxReceipt = await hre.ethers.provider.waitForTransaction(
       receiveTx.hash
@@ -107,8 +111,31 @@ task("receive", "Funds the FundMe contract by calling receive function")
 
     assert(receiveTxReceipt.status);
 
-    let fundBalance = await hre.ethers.provider.getBalance(taskArgs.fma);
+    const fundBalance = await hre.ethers.provider.getBalance(taskArgs.fma);
     console.log("Contract balance: ", fundBalance);
+  });
+
+task("getFundsForAddress", "Get funds for address")
+  .addParam("pca", "The PriceConverter's address")
+  .addParam("fma", "The FundMe's address")
+  .addParam("accountindex", "Index for account list")
+  .setAction(async (taskArgs, hre) => {
+    const PriceConverter = await hre.ethers.getContractFactory(
+      "PriceConverter"
+    );
+    const priceConverter = PriceConverter.attach(taskArgs.pca);
+
+    const FundMe = await hre.ethers.getContractFactory("FundMe", {
+      libraries: {
+        PriceConverter: priceConverter.address,
+      },
+    });
+
+    const fme = FundMe.attach(taskArgs.fma);
+    const funder = (await hre.ethers.getSigners())[taskArgs.accountindex];
+
+    const funderBalance = await fme.addressToAmountFunded(funder.address);
+    console.log("Funder balance: ", funderBalance);
   });
 
 // You need to export an object to set up your config

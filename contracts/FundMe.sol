@@ -20,7 +20,7 @@ contract FundMe is Ownable {
         }
 
         funders.push(msg.sender);
-        addressToAmountFunded[msg.sender] = msg.value;
+        addressToAmountFunded[msg.sender] += msg.value;
     }
 
     function withdraw() public onlyOwner {
