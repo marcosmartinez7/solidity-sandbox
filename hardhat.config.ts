@@ -7,6 +7,8 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
+import { ethers } from "hardhat";
+import { assert } from "console";
 
 dotenv.config();
 
@@ -49,7 +51,11 @@ task("withdraw", "Get funds of the FundMe contract")
 
     const withdrawTx = await fme.connect(withdrawAccount).withdraw();
 
-    await hre.ethers.provider.waitForTransaction(withdrawTx.hash);
+    const withdrawTxReceipt = await hre.ethers.provider.waitForTransaction(
+      withdrawTx.hash
+    );
+
+    assert(withdrawTxReceipt.status);
 
     fundBalance = await hre.ethers.provider.getBalance(fme.address);
     console.log("Contract balance: ", fundBalance);
@@ -76,9 +82,32 @@ task("fund", "Funds the FundMe contract")
 
     console.log("Funding ... ");
     const fundTx = await fme.fund({ value: "60000000000000000" });
-    await hre.ethers.provider.waitForTransaction(fundTx.hash);
+    const fundTxReceipt = await hre.ethers.provider.waitForTransaction(
+      fundTx.hash
+    );
+    assert(fundTxReceipt.status);
 
     let fundBalance = await hre.ethers.provider.getBalance(fme.address);
+    console.log("Contract balance: ", fundBalance);
+  });
+
+task("receive", "Funds the FundMe contract by calling receive function")
+  .addParam("fma", "The FundMe's address")
+  .addParam("accountindex", "Index for account list")
+
+  .setAction(async (taskArgs, hre) => {
+    const account = (await hre.ethers.getSigners())[taskArgs.accountindex];
+    const receiveTx = await account.sendTransaction({
+      to: taskArgs.fma,
+      value: "60000000000000000",
+    });
+    const receiveTxReceipt = await hre.ethers.provider.waitForTransaction(
+      receiveTx.hash
+    );
+
+    assert(receiveTxReceipt.status);
+
+    let fundBalance = await hre.ethers.provider.getBalance(taskArgs.fma);
     console.log("Contract balance: ", fundBalance);
   });
 

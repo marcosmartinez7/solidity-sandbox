@@ -40,4 +40,12 @@ contract FundMe is Ownable {
         }("");
         require(callSuccess, "Call failed");
     }
+
+    receive() external payable {
+        fund();
+    }
+
+    fallback() external payable {
+        fund();
+    }
 }

@@ -28,7 +28,6 @@ describe("FundMe", function () {
         PriceConverter: priceConverter.address,
       },
     });
-
     const fME = await FundMe.deploy();
     await fME.deployed();
   });
