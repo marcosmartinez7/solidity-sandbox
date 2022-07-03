@@ -7,136 +7,15 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
-import { assert } from "console";
 
 dotenv.config();
 
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-  const accounts = await hre.ethers.getSigners();
-
-  for (const account of accounts) {
-    console.log(account.address);
-  }
-});
-
-task("withdraw", "Get funds of the FundMe contract")
-  .addParam("pca", "The PriceConverter's address")
-  .addParam("fma", "The FundMe's address")
-  .addParam("accountindex", "Index for account list")
-
-  .setAction(async (taskArgs, hre) => {
-    const PriceConverter = await hre.ethers.getContractFactory(
-      "PriceConverter"
-    );
-    const priceConverter = PriceConverter.attach(taskArgs.pca);
-
-    const FundMe = await hre.ethers.getContractFactory("FundMe", {
-      libraries: {
-        PriceConverter: priceConverter.address,
-      },
-    });
-
-    const fme = FundMe.attach(taskArgs.fma);
-
-    let fundBalance = await hre.ethers.provider.getBalance(fme.address);
-    console.log("Contract balance: ", fundBalance);
-
-    console.log("Withdrawing .. ");
-    const withdrawAccount = (await hre.ethers.getSigners())[
-      taskArgs.accountindex
-    ];
-
-    const withdrawTx = await fme.connect(withdrawAccount).withdraw();
-
-    const withdrawTxReceipt = await hre.ethers.provider.waitForTransaction(
-      withdrawTx.hash
-    );
-
-    assert(withdrawTxReceipt.status);
-
-    fundBalance = await hre.ethers.provider.getBalance(fme.address);
-    console.log("Contract balance: ", fundBalance);
-  });
-
-task("fund", "Funds the FundMe contract")
-  .addParam("pca", "The PriceConverter's address")
-  .addParam("fma", "The FundMe's address")
-  .addParam("accountindex", "Index for account list")
-  .setAction(async (taskArgs, hre) => {
-    const PriceConverter = await hre.ethers.getContractFactory(
-      "PriceConverter"
-    );
-    const priceConverter = PriceConverter.attach(taskArgs.pca);
-
-    const FundMe = await hre.ethers.getContractFactory("FundMe", {
-      libraries: {
-        PriceConverter: priceConverter.address,
-      },
-    });
-
-    const fme = FundMe.attach(taskArgs.fma);
-    const funder = (await hre.ethers.getSigners())[taskArgs.accountindex];
-
-    console.log("Funding ... ");
-    const fundTx = await fme
-      .connect(funder)
-      .fund({ value: "60000000000000000" });
-    const fundTxReceipt = await hre.ethers.provider.waitForTransaction(
-      fundTx.hash
-    );
-    assert(fundTxReceipt.status);
-
-    const fundBalance = await hre.ethers.provider.getBalance(fme.address);
-    console.log("Contract balance: ", fundBalance);
-
-    const funderBalance = await fme.addressToAmountFunded(funder.address);
-    console.log("Funder balance: ", funderBalance);
-  });
-
-task("receive", "Funds the FundMe contract by calling receive function")
-  .addParam("fma", "The FundMe's address")
-  .addParam("accountindex", "Index for account list")
-
-  .setAction(async (taskArgs, hre) => {
-    const account = (await hre.ethers.getSigners())[taskArgs.accountindex];
-    const receiveTx = await account.sendTransaction({
-      to: taskArgs.fma,
-      value: "70000000000000000",
-    });
-    const receiveTxReceipt = await hre.ethers.provider.waitForTransaction(
-      receiveTx.hash
-    );
-
-    assert(receiveTxReceipt.status);
-
-    const fundBalance = await hre.ethers.provider.getBalance(taskArgs.fma);
-    console.log("Contract balance: ", fundBalance);
-  });
-
-task("getFundsForAddress", "Get funds for address")
-  .addParam("pca", "The PriceConverter's address")
-  .addParam("fma", "The FundMe's address")
-  .addParam("accountindex", "Index for account list")
-  .setAction(async (taskArgs, hre) => {
-    const PriceConverter = await hre.ethers.getContractFactory(
-      "PriceConverter"
-    );
-    const priceConverter = PriceConverter.attach(taskArgs.pca);
-
-    const FundMe = await hre.ethers.getContractFactory("FundMe", {
-      libraries: {
-        PriceConverter: priceConverter.address,
-      },
-    });
-
-    const fme = FundMe.attach(taskArgs.fma);
-    const funder = (await hre.ethers.getSigners())[taskArgs.accountindex];
-
-    const funderBalance = await fme.addressToAmountFunded(funder.address);
-    console.log("Funder balance: ", funderBalance);
-  });
+// Tasks
+import "./tasks/withdraw";
+import "./tasks/fund";
+import "./tasks/receive";
+import "./tasks/getFundsForAddress";
+import "./tasks/accounts";
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -147,6 +26,7 @@ const config: HardhatUserConfig = {
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
       accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_2!],
+      chainId: 4,
     },
   },
   gasReporter: {

@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+import { ethers, run, network } from "hardhat";
 
 async function main() {
   const PriceConverter = await ethers.getContractFactory("PriceConverter");
@@ -12,10 +12,24 @@ async function main() {
     },
   });
 
-  const fME = await FundMe.deploy();
-  await fME.deployed();
+  const fme = await FundMe.deploy();
+  await fme.deployed();
 
-  console.log("FundMe deployed to:", fME.address);
+  console.log("FundMe deployed to:", fme.address);
+  if (network.config.chainId === 4 && process.env.ETHERSCAN_API_KEY) {
+    // rinkeby
+    console.log("Verifying...");
+    await fme.deployTransaction.wait(6);
+    await verify(fme.address, []);
+  }
+}
+
+async function verify(contractAddress: string, args: any) {
+  console.log("Verifying contract ..");
+  await run("verify:verify", {
+    address: contractAddress,
+    constructor: args,
+  });
 }
 
 main().catch((error) => {

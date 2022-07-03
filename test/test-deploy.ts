@@ -1,12 +1,18 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { SimpleStorage } from "../typechain";
 
 describe("SimpleStorage", function () {
-  it("Should store", async function () {
-    const SimpleStorage = await ethers.getContractFactory("SimpleStorage");
-    const simpleStorage = await SimpleStorage.deploy();
+  let simpleStorageFactory, simpleStorage: SimpleStorage;
+  this.beforeEach(async () => {
+    simpleStorageFactory = await ethers.getContractFactory("SimpleStorage");
+    simpleStorage = await simpleStorageFactory.deploy();
     await simpleStorage.deployed();
-
+  });
+  it("Should start with 0", async function () {
+    expect(await simpleStorage.favoriteNumber()).to.equal(0);
+  });
+  it("Should store 1", async function () {
     const setGreetingTx = await simpleStorage.store(1);
 
     // wait until the transaction is mined

@@ -1,5 +1,5 @@
 {
-  "name": "hardhat-project",
+  "name": "solidity-sandbox",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
