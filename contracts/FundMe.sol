@@ -11,11 +11,17 @@ contract FundMe is Ownable {
     using PriceConverter for uint256;
     uint256 public constant MINIMUM_USD = 50 * 1e18;
 
+    AggregatorV3Interface public priceFeed;
+
     address[] public funders;
     mapping(address => uint256) public addressToAmountFunded;
 
+    constructor(address priceFeedAddress) {
+        priceFeed = AggregatorV3Interface(priceFeedAddress);
+    }
+
     function fund() public payable {
-        if (msg.value.getConversionRate() < MINIMUM_USD) {
+        if (msg.value.getConversionRate(priceFeed) < MINIMUM_USD) {
             revert NotEnoughFunds();
         }
 

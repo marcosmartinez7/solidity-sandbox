@@ -7,6 +7,7 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-gas-reporter";
+import "hardhat-deploy";
 
 dotenv.config();
 
@@ -21,8 +22,16 @@ import "./tasks/accounts";
 // Go to https://hardhat.org/config/ to learn more
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.15",
+  solidity: {
+    compilers: [{ version: "0.8.15" }, { version: "0.6.6" }],
+  },
   networks: {
+    hardhat: {
+      mining: {
+        auto: false,
+        interval: 5000,
+      },
+    },
     rinkeby: {
       url: process.env.RINKEBY_URL || "",
       accounts: [process.env.PRIVATE_KEY!, process.env.PRIVATE_KEY_2!],
@@ -38,6 +47,14 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0,
+    },
+    user: {
+      default: 1,
+    },
   },
 };
 
