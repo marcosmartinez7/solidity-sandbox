@@ -1,3 +1,4 @@
+import { verify } from "../utils/verify";
 import { ethers, run, network } from "hardhat";
 
 async function main() {
@@ -22,14 +23,6 @@ async function main() {
     await fme.deployTransaction.wait(6);
     await verify(fme.address, []);
   }
-}
-
-async function verify(contractAddress: string, args: any) {
-  console.log("Verifying contract ..");
-  await run("verify:verify", {
-    address: contractAddress,
-    constructor: args,
-  });
 }
 
 main().catch((error) => {
